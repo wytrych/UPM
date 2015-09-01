@@ -1,0 +1,14 @@
+{
+  "name": "ultimate-project-manager",
+  "description": "A tool extending github functionality for PMing",
+  "version": "0.0.0",
+  "homepage": "https://github.com/wytrych/UPM",
+  "license": "Private",
+  "private": true,
+  "dependencies": {
+    "angular": "1.4.4",
+    "angular-route": "1.4.4",
+    "angular-loader": "1.4.4",
+    "angular-mocks": "1.4.4"
+  }
+}
