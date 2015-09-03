@@ -10,5 +10,8 @@
     "angular-route": "1.4.4",
     "angular-loader": "1.4.4",
     "angular-mocks": "1.4.4"
+  },
+  "devDependencies": {
+    "d3": "3.5.6"
   }
 }

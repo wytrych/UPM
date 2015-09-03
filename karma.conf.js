@@ -7,8 +7,7 @@ module.exports = function(config){
       'app/lib/angular/angular.js',
       'app/lib/angular-route/angular-route.js',
       'app/lib/angular-mocks/angular-mocks.js',
-      'app/components/**/*.js',
-      'app/view*/**/*.js'
+	'app/modules/**/*-spec.js'
     ],
 
     autoWatch : true,
