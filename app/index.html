@@ -9,7 +9,7 @@
   <title>My AngularJS App</title>
   <meta name="description" content="">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="app.css">
+  <!-- <link rel="stylesheet" href="app.css">-->
     <style>
 
 .node {
@@ -23,6 +23,30 @@
     stroke-width: 2px;
 }
 
+svg {
+    border: black solid 2px;
+}
+
+.people {
+    opacity: 0.5;
+}
+
+.projects {
+    fill: green;
+}
+
+.backend {
+    fill: blue;
+}
+
+.javascript {
+    fill: red;
+}
+
+.css {
+    fill: yellow;
+}
+
     </style>
 </head>
 <body>
@@ -33,11 +57,12 @@
   <!-- In production use:
   <script src="//ajax.googleapis.com/ajax/libs/angularjs/x.x.x/angular.min.js"></script>
   -->
-  <script src="lib/angular/angular.js"></script>
-  <script src="lib/angular-route/angular-route.js"></script>
+ <!-- <script src="lib/angular/angular.js"></script>
+ <script src="lib/angular-route/angular-route.js"></script>-->
+  <script src="lib/lodash/lodash.js"></script>
   <script src="lib/d3/d3.js"></script>
   <script src="lib/d3-jetpack/d3-jetpack.js"></script>
-  <script src="app.js"></script>
-  <script src="modules/chart.js"></script>
+  <!--<script src="app.js"></script>-->
+  <script type="application/javascript;version=1.7" src="dist/modules/draggableCircles.js"></script>
 </body>
 </html>

@@ -11,8 +11,8 @@
     "angular-mocks": "1.4.4",
     "angular-route": "1.4.4",
     "d3": "3.5.6",
-    "d3-jetpack": "*"
+    "d3-jetpack": "*",
+    "lodash": "~3.10.1"
   },
-  "devDependencies": {
-  }
+  "devDependencies": {}
 }

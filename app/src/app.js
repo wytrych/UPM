@@ -6,11 +6,5 @@
 	 'ngRoute'
  ]).
  config(['$routeProvider', function($routeProvider) {
-	var x = (a, y=12) => a + y;
-
-	{
-		let x = 12;
-	}
-		
- }])
+ }]);
 })(window.angular);
