@@ -6,45 +6,50 @@ function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
 
     'use strict';
 
-    var data = {
-        people: [{
-            name: 'Alice',
-            x: 10,
-            y: 10,
-            velocity: 20,
-            field: 'backend'
-        }, {
-            name: 'Bob',
-            x: 30,
-            y: 30,
-            velocity: 30,
-            field: 'javascript'
-        }, {
-            name: 'Claire',
-            x: 50,
-            y: 50,
-            velocity: 40,
-            field: 'css'
-        }],
-        projects: [{
-            name: 'Catbreed',
-            x: 100,
-            y: 100,
-            velocity: 80,
-            allocatedPoints: 0
-        }, {
-            name: 'Coalesion',
-            x: 300,
-            y: 300,
-            velocity: 80,
-            allocatedPoints: 0
-        }]
+    var data = [{
+        name: 'Catbreed',
+        velocity: 80,
+        allocatedPoints: 0,
+        type: 'project'
+    }, {
+        name: 'Coalesion',
+        velocity: 80,
+        allocatedPoints: 0,
+        type: 'project'
+    }, {
+        name: 'Alice',
+        velocity: 20,
+        field: 'backend',
+        type: 'person'
+    }, {
+        name: 'Bob',
+        velocity: 30,
+        field: 'javascript',
+        type: 'person'
+    }, {
+        name: 'Claire',
+        velocity: 40,
+        field: 'css',
+        type: 'person'
+    }];
+
+    var allocatePoints = function allocatePoints(name, points) {
+        var project = _.find(data, function (item) {
+            return item.name === name;
+        });
+
+        if (project) {
+            project.allocatedPoints += points;
+        }
     };
 
     var getDragger = function getDragger() {
 
         var dragstop = function dragstop(item) {
-            var nodes = Array.of.apply(Array, [item].concat(_toConsumableArray(data.projects)));
+            var projects = _.filter(visualRepresentation, function (d) {
+                return d.type === 'project';
+            });
+            var nodes = Array.of.apply(Array, [item].concat(_toConsumableArray(projects)));
             var previousProject;
 
             var q = d3.geom.quadtree(nodes),
@@ -52,7 +57,7 @@ function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
                 n = nodes.length;
 
             if (item.project) {
-                previousProject = _.find(data.projects, function (project) {
+                previousProject = _.find(projects, function (project) {
                     return project.name === item.project;
                 });
             }
@@ -69,19 +74,21 @@ function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
                 return d.y;
             });
 
-            var project = _.find(data.projects, function (project) {
+            var project = _.find(projects, function (project) {
                 return project.name === item.project;
             });
 
             if (previousProject) {
                 previousProject.allocatedPoints -= item.velocity;
+                allocatePoints(previousProject.name, -item.velocity);
             }
 
             if (project) {
                 project.allocatedPoints += item.velocity;
+                allocatePoints(project.name, item.velocity);
             }
 
-            svg.selectAll('circle.projects').attr('r', function (d) {
+            svg.selectAll('circle.project').attr('r', function (d) {
                 return d.velocity - d.allocatedPoints;
             });
         };
@@ -131,19 +138,38 @@ function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
 
     var svg = createContainer(width, height);
 
-    var addCircles = function addCircles(container, data, circleClass) {
-        var elements = 'circle.' + circleClass;
-        return container.selectAll(elements).data(data[circleClass]).enter().append(elements);
+    var addCircles = function addCircles(container, data) {
+        return container.selectAll('circle').data(data).enter().append('circle').attr('class', function (d) {
+            var classNames = d.type;
+            if (d.field) classNames += ' ' + d.field;
+
+            return classNames;
+        });
     };
 
-    addCircles(svg, data, 'projects');
-    addCircles(svg, data, 'people').attr('class', function (d) {
-        return 'people ' + d.field;
-    }).call(getDragger());
+    var createVisualRepresentation = function createVisualRepresentation(data) {
+        var representation = JSON.parse(JSON.stringify(data));
+        representation.forEach(function (item) {
+            item.x = Math.round(Math.random() * 300);
+            item.y = Math.round(Math.random() * 300);
+        });
+
+        return representation;
+    };
+
+    var visualRepresentation = createVisualRepresentation(data);
+
+    addCircles(svg, visualRepresentation).each(function (d) {
+        if (d.type === 'person') d3.select(this).call(getDragger());
+    });
 
     var plotCircles = function plotCircles(selection) {
         selection.attr("r", d3.f('velocity')).attr("cx", d3.f('x')).attr("cy", d3.f('y'));
     };
 
     plotCircles(svg.selectAll('circle'));
+
+    window.printData = function () {
+        console.log(data);
+    };
 })(window.d3, window._);

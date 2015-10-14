@@ -2,52 +2,56 @@
 
     'use strict';
 
-    var data = {
-        people: [
-            {
-                name: 'Alice',
-                x: 10,
-                y: 10,
-                velocity: 20,
-                field: 'backend'
-            },
-            {
-                name: 'Bob',
-                x: 30,
-                y: 30,
-                velocity: 30,
-                field: 'javascript'
-            },
-            {
-                name: 'Claire',
-                x: 50,
-                y: 50,
-                velocity: 40,
-                field: 'css'
-            }
-        ],
-        projects: [
+    var data = [
             {
                 name: 'Catbreed',
-                x: 100,
-                y: 100,
                 velocity: 80,
-                allocatedPoints: 0
+                allocatedPoints: 0,
+                type: 'project'
             },
             {
                 name: 'Coalesion',
-                x: 300,
-                y: 300,
                 velocity: 80,
-                allocatedPoints: 0
+                allocatedPoints: 0,
+                type: 'project'
+            },
+            {
+                name: 'Alice',
+                velocity: 20,
+                field: 'backend',
+                type: 'person'
+            },
+            {
+                name: 'Bob',
+                velocity: 30,
+                field: 'javascript',
+                type: 'person'
+            },
+            {
+                name: 'Claire',
+                velocity: 40,
+                field: 'css',
+                type: 'person'
             }
-        ]
+        ];
+
+    const allocatePoints = function (name, points) {
+        let project = _.find(data, (item) => {
+            return item.name === name;
+        });
+
+        if (project) {
+            project.allocatedPoints += points;
+        }
     };
 
     const getDragger = function () {
 
         const dragstop = function (item) {
-            let nodes = Array.of(item, ...data.projects);
+            let projects = _.filter(visualRepresentation, (d) => {
+                return d.type === 'project';
+            });
+            let nodes = Array.of(item, ...projects);
             var previousProject;
 
             var q = d3.geom.quadtree(nodes),
@@ -55,7 +59,7 @@
                 n = nodes.length;
 
             if (item.project) {
-                previousProject = _.find(data.projects, (project) => {
+                previousProject = _.find(projects, (project) => {
                     return project.name === item.project;
                 });
             }
@@ -70,22 +74,24 @@
             .attr("cx", function(d) { return d.x; })
             .attr("cy", function(d) { return d.y; });
 
-            let project = _.find(data.projects, (project) => {
+            let project = _.find(projects, (project) => {
                 return project.name === item.project;
             });
 
             if (previousProject) {
                 previousProject.allocatedPoints -= item.velocity;
+                allocatePoints(previousProject.name, -item.velocity);
             }
 
             if (project) {
                 project.allocatedPoints += item.velocity;
+                allocatePoints(project.name, item.velocity);
             }
 
-            svg.selectAll('circle.projects')
-            .attr('r', (d) => {
-                return d.velocity - d.allocatedPoints;
-            });
+            svg.selectAll('circle.project')
+                .attr('r', (d) => {
+                    return d.velocity - d.allocatedPoints;
+                });
         
         };
 
@@ -137,19 +143,35 @@
 
     var svg = createContainer(width, height);
 
-    const addCircles = function (container, data, circleClass) {
-        var elements = 'circle.' + circleClass;
-        return container.selectAll(elements).data(data[circleClass])
+    const addCircles = function (container, data) {
+        return container.selectAll('circle').data(data)
             .enter()
-                .append(elements);
+                .append('circle')
+                .attr('class', (d) => {
+                    let classNames = d.type;
+                    if (d.field) 
+                        classNames += ` ${d.field}`;
+
+                    return classNames;
+                });
     };
 
-    addCircles(svg, data, 'projects');
-    addCircles(svg, data, 'people')
-        .attr('class', (d) => {
-            return 'people ' + d.field;
-        })
-        .call(getDragger());
+    const createVisualRepresentation = function (data) {
+        let representation = JSON.parse(JSON.stringify(data));
+        representation.forEach((item) => {
+            item.x = Math.round(Math.random() * 300);
+            item.y = Math.round(Math.random() * 300);
+        });
+
+        return representation;
+    };
+
+    var visualRepresentation = createVisualRepresentation (data);
+
+    addCircles(svg, visualRepresentation).each(function(d) {
+        if (d.type === 'person') 
+            d3.select(this).call(getDragger());
+    });
 
     const plotCircles = function (selection) {
        selection 
@@ -159,5 +181,9 @@
     };
 
     plotCircles(svg.selectAll('circle'));
+
+    window.printData = function () {
+        console.log(data);
+    };
 
 })(window.d3, window._);
