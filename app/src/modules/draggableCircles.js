@@ -2,7 +2,7 @@
 
     'use strict';
 
-    var data = [
+    var projects = [
             {
                 name: 'Catbreed',
                 velocity: 80,
@@ -14,7 +14,10 @@
                 velocity: 80,
                 allocatedPoints: 0,
                 type: 'project'
-            },
+            }
+    ];
+
+    var people = [
             {
                 name: 'Alice',
                 velocity: 20,
@@ -35,22 +38,42 @@
             }
         ];
 
-    const allocatePoints = function (name, points) {
-        let project = _.find(data, (item) => {
-            return item.name === name;
-        });
+    const getter = (state) => ({
+        getData: () => (JSON.parse(JSON.stringify(state.data)))
+    });
 
-        if (project) {
-            project.allocatedPoints += points;
+    const allocator = (state) => ({
+        allocatePoints: (name, points) => {
+            let target = _.find(state.data, (item) => (
+                item.name === name
+            ));
+
+            if (target) {
+                target.allocatedPoints += points;
+            }
         }
+    });
+
+    const dataContainer = (sourceData) => {
+        let data = JSON.parse(JSON.stringify(sourceData));
+        let state = {
+            data
+        };
+
+        return Object.assign(
+            {},
+            getter(state),
+            allocator(state)
+        );
     };
+
+    var myProjects = dataContainer(projects);
+    var myPeople = dataContainer(people);
 
     const getDragger = function () {
 
         const dragstop = function (item) {
-            let projects = _.filter(visualRepresentation, (d) => {
-                return d.type === 'project';
-            });
+            let projects = _.filter(visualRepresentation, (d) => ( d.type === 'project' ));
             let nodes = Array.of(item, ...projects);
             var previousProject;
 
@@ -59,9 +82,7 @@
                 n = nodes.length;
 
             if (item.project) {
-                previousProject = _.find(projects, (project) => {
-                    return project.name === item.project;
-                });
+                previousProject = _.find(projects, (project) => ( project.name === item.project ));
             }
 
             item.project = null;
@@ -71,27 +92,23 @@
             }
 
             svg.selectAll("circle")
-            .attr("cx", function(d) { return d.x; })
-            .attr("cy", function(d) { return d.y; });
+                .attr("cx", d3.f('x'))
+                .attr("cy", d3.f('y'));
 
-            let project = _.find(projects, (project) => {
-                return project.name === item.project;
-            });
+            let project = _.find(projects, (project) => ( project.name === item.project ));
 
             if (previousProject) {
                 previousProject.allocatedPoints -= item.velocity;
-                allocatePoints(previousProject.name, -item.velocity);
+                myProjects.allocatePoints(previousProject.name, -item.velocity);
             }
 
             if (project) {
                 project.allocatedPoints += item.velocity;
-                allocatePoints(project.name, item.velocity);
+                myProjects.allocatePoints(project.name, item.velocity);
             }
 
             svg.selectAll('circle.project')
-                .attr('r', (d) => {
-                    return d.velocity - d.allocatedPoints;
-                });
+                .attr('r', (d) => (d.velocity - d.allocatedPoints));
         
         };
 
@@ -137,9 +154,9 @@
     const width = 540,
         height = 425;
 
-    const createContainer = function (width, height) {
-        return d3.select("body").append("svg").attr("width", width).attr("height", height);
-    };
+    const createContainer = (width, height) => (
+        d3.select("body").append("svg").attr("width", width).attr("height", height)
+    );
 
     var svg = createContainer(width, height);
 
@@ -156,17 +173,28 @@
                 });
     };
 
-    const createVisualRepresentation = function (data) {
-        let representation = JSON.parse(JSON.stringify(data));
-        representation.forEach((item) => {
-            item.x = Math.round(Math.random() * 300);
-            item.y = Math.round(Math.random() * 300);
+    const createVisualRepresentation = function (...data) {
+        let representation = [];
+        data.forEach((item, key) => {
+            let newItem = {};
+            newItem.x = Math.round(Math.random() * 300);
+            newItem.y = Math.round(Math.random() * 300);
+            newItem.field = item.field;
+            newItem.name = item.name;
+            newItem.velocity = item.velocity;
+            newItem.type = item.type;
+            newItem.allocatedPoints = item.allocatedPoints;
+
+            representation.push(newItem);
         });
 
         return representation;
     };
 
-    var visualRepresentation = createVisualRepresentation (data);
+    var visualRepresentation = createVisualRepresentation (
+        ...myProjects.getData(),
+        ...myPeople.getData()
+    );
 
     addCircles(svg, visualRepresentation).each(function(d) {
         if (d.type === 'person') 
@@ -183,7 +211,7 @@
     plotCircles(svg.selectAll('circle'));
 
     window.printData = function () {
-        console.log(data);
+        console.log(getData());
     };
 
 })(window.d3, window._);

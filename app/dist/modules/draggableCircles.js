@@ -6,7 +6,7 @@ function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
 
     'use strict';
 
-    var data = [{
+    var projects = [{
         name: 'Catbreed',
         velocity: 80,
         allocatedPoints: 0,
@@ -16,7 +16,9 @@ function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
         velocity: 80,
         allocatedPoints: 0,
         type: 'project'
-    }, {
+    }];
+
+    var people = [{
         name: 'Alice',
         velocity: 20,
         field: 'backend',
@@ -33,15 +35,39 @@ function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
         type: 'person'
     }];
 
-    var allocatePoints = function allocatePoints(name, points) {
-        var project = _.find(data, function (item) {
-            return item.name === name;
-        });
-
-        if (project) {
-            project.allocatedPoints += points;
-        }
+    var getter = function getter(state) {
+        return {
+            getData: function getData() {
+                return JSON.parse(JSON.stringify(state.data));
+            }
+        };
     };
+
+    var allocator = function allocator(state) {
+        return {
+            allocatePoints: function allocatePoints(name, points) {
+                var target = _.find(state.data, function (item) {
+                    return item.name === name;
+                });
+
+                if (target) {
+                    target.allocatedPoints += points;
+                }
+            }
+        };
+    };
+
+    var dataContainer = function dataContainer(sourceData) {
+        var data = JSON.parse(JSON.stringify(sourceData));
+        var state = {
+            data: data
+        };
+
+        return Object.assign({}, getter(state), allocator(state));
+    };
+
+    var myProjects = dataContainer(projects);
+    var myPeople = dataContainer(people);
 
     var getDragger = function getDragger() {
 
@@ -68,11 +94,7 @@ function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
                 q.visit(collide(nodes[i], item));
             }
 
-            svg.selectAll("circle").attr("cx", function (d) {
-                return d.x;
-            }).attr("cy", function (d) {
-                return d.y;
-            });
+            svg.selectAll("circle").attr("cx", d3.f('x')).attr("cy", d3.f('y'));
 
             var project = _.find(projects, function (project) {
                 return project.name === item.project;
@@ -80,12 +102,12 @@ function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
 
             if (previousProject) {
                 previousProject.allocatedPoints -= item.velocity;
-                allocatePoints(previousProject.name, -item.velocity);
+                myProjects.allocatePoints(previousProject.name, -item.velocity);
             }
 
             if (project) {
                 project.allocatedPoints += item.velocity;
-                allocatePoints(project.name, item.velocity);
+                myProjects.allocatePoints(project.name, item.velocity);
             }
 
             svg.selectAll('circle.project').attr('r', function (d) {
@@ -147,17 +169,30 @@ function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
         });
     };
 
-    var createVisualRepresentation = function createVisualRepresentation(data) {
-        var representation = JSON.parse(JSON.stringify(data));
-        representation.forEach(function (item) {
-            item.x = Math.round(Math.random() * 300);
-            item.y = Math.round(Math.random() * 300);
+    var createVisualRepresentation = function createVisualRepresentation() {
+        var representation = [];
+
+        for (var _len = arguments.length, data = Array(_len), _key = 0; _key < _len; _key++) {
+            data[_key] = arguments[_key];
+        }
+
+        data.forEach(function (item, key) {
+            var newItem = {};
+            newItem.x = Math.round(Math.random() * 300);
+            newItem.y = Math.round(Math.random() * 300);
+            newItem.field = item.field;
+            newItem.name = item.name;
+            newItem.velocity = item.velocity;
+            newItem.type = item.type;
+            newItem.allocatedPoints = item.allocatedPoints;
+
+            representation.push(newItem);
         });
 
         return representation;
     };
 
-    var visualRepresentation = createVisualRepresentation(data);
+    var visualRepresentation = createVisualRepresentation.apply(undefined, _toConsumableArray(myProjects.getData()).concat(_toConsumableArray(myPeople.getData())));
 
     addCircles(svg, visualRepresentation).each(function (d) {
         if (d.type === 'person') d3.select(this).call(getDragger());
@@ -170,6 +205,6 @@ function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
     plotCircles(svg.selectAll('circle'));
 
     window.printData = function () {
-        console.log(data);
+        console.log(getData());
     };
 })(window.d3, window._);
