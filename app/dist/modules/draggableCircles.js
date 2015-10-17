@@ -160,9 +160,9 @@ function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
 
     var svg = createContainer(width, height);
 
-    var addCircles = function addCircles(container, data) {
-        return container.selectAll('circle').data(data).enter().append('circle').attr('class', function (d) {
-            var classNames = d.type;
+    var addCircles = function addCircles(container, data, groupName) {
+        return container.selectAll('circle.' + groupName).data(data).enter().append('circle').attr('class', function (d) {
+            var classNames = d.type + ' ' + groupName;
             if (d.field) classNames += ' ' + d.field;
 
             return classNames;
@@ -170,12 +170,12 @@ function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
     };
 
     var createVisualRepresentation = function createVisualRepresentation() {
-        var representation = [];
-
         for (var _len = arguments.length, data = Array(_len), _key = 0; _key < _len; _key++) {
             data[_key] = arguments[_key];
         }
 
+        console.log(data);
+        var representation = [];
         data.forEach(function (item, key) {
             var newItem = {};
             newItem.x = Math.round(Math.random() * 300);
@@ -192,19 +192,58 @@ function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
         return representation;
     };
 
-    var visualRepresentation = createVisualRepresentation.apply(undefined, _toConsumableArray(myProjects.getData()).concat(_toConsumableArray(myPeople.getData())));
+    var circleDrawer = function circleDrawer(state) {
+        return {
+            plot: function plot(data) {
+                addCircles(state.canvas, createVisualRepresentation.apply(undefined, _toConsumableArray(data)), state.groupName).each(function (d) {
+                    var element = d3.select(this).attr("r", d.velocity).attr("cx", d.x).attr("cy", d.y);
 
-    addCircles(svg, visualRepresentation).each(function (d) {
-        if (d.type === 'person') d3.select(this).call(getDragger());
-    });
-
-    var plotCircles = function plotCircles(selection) {
-        selection.attr("r", d3.f('velocity')).attr("cx", d3.f('x')).attr("cy", d3.f('y'));
+                    //                    if (d.type === 'person')
+                    //                        element.call(getDragger());
+                });
+            }
+        };
     };
 
-    plotCircles(svg.selectAll('circle'));
-
-    window.printData = function () {
-        console.log(getData());
+    var addDragger = function addDragger(selection) {
+        selection.each(function (d) {
+            d3.select(this).call(getDragger());
+        });
     };
+
+    var plotData = function plotData(selection) {
+        selection.each(function (d) {
+            d3.select(this).attr("r", d.velocity).attr("cx", d.x).attr("cy", d.y);
+        });
+    };
+
+    var staticVisualiser = function staticVisualiser(canvas, groupName) {
+        return {
+            plot: function plot(data) {
+                var selection = addCircles(canvas, createVisualRepresentation.apply(undefined, _toConsumableArray(data)), groupName);
+                var steps = [plotData];
+                steps.forEach(function (item) {
+                    return item(selection);
+                });
+            }
+        };
+    };
+
+    var draggableVisualiser = function draggableVisualiser(canvas, groupName) {
+        return {
+            plot: function plot(data) {
+                var selection = addCircles(canvas, createVisualRepresentation.apply(undefined, _toConsumableArray(data)), groupName);
+                var steps = [plotData, addDragger];
+                steps.forEach(function (item) {
+                    return item(selection);
+                });
+            }
+        };
+    };
+
+    var projectVisualisation = staticVisualiser(svg, 'project');
+    projectVisualisation.plot(myProjects.getData());
+
+    var peopleVisualisation = draggableVisualiser(svg, 'person');
+    peopleVisualisation.plot(myPeople.getData());
 })(window.d3, window._);

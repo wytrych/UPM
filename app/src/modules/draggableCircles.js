@@ -39,7 +39,7 @@
         ];
 
     const getter = (state) => ({
-        getData: () => (JSON.parse(JSON.stringify(state.data)))
+        getData: () => JSON.parse(JSON.stringify(state.data))
     });
 
     const allocator = (state) => ({
@@ -160,12 +160,12 @@
 
     var svg = createContainer(width, height);
 
-    const addCircles = function (container, data) {
-        return container.selectAll('circle').data(data)
+    const addCircles = function (container, data, groupName) {
+        return container.selectAll('circle.' + groupName).data(data)
             .enter()
                 .append('circle')
                 .attr('class', (d) => {
-                    let classNames = d.type;
+                    let classNames = `${d.type} ${groupName}`;
                     if (d.field) 
                         classNames += ` ${d.field}`;
 
@@ -174,6 +174,7 @@
     };
 
     const createVisualRepresentation = function (...data) {
+        console.log(data);
         let representation = [];
         data.forEach((item, key) => {
             let newItem = {};
@@ -191,27 +192,56 @@
         return representation;
     };
 
-    var visualRepresentation = createVisualRepresentation (
-        ...myProjects.getData(),
-        ...myPeople.getData()
-    );
+    const circleDrawer = (state) => ({
+        plot: (data) => {
+            addCircles (state.canvas, createVisualRepresentation(...data), state.groupName)
+                .each(function(d) {
+                    var element = d3.select(this)
+                        .attr("r", d.velocity)
+                        .attr("cx", d.x)
+                        .attr("cy", d.y);
 
-    addCircles(svg, visualRepresentation).each(function(d) {
-        if (d.type === 'person') 
-            d3.select(this).call(getDragger());
+//                    if (d.type === 'person') 
+//                        element.call(getDragger());
+                });
+        }
     });
 
-    const plotCircles = function (selection) {
-       selection 
-            .attr("r", d3.f('velocity'))
-            .attr("cx", d3.f('x'))
-            .attr("cy", d3.f('y'));
+    const addDragger = (selection) => {
+        selection.each(function (d) {
+            d3.select(this).call(getDragger());
+        });
     };
 
-    plotCircles(svg.selectAll('circle'));
-
-    window.printData = function () {
-        console.log(getData());
+    const plotData = (selection) => {
+        selection.each(function (d) {
+            d3.select(this)
+                .attr("r", d.velocity)
+                .attr("cx", d.x)
+                .attr("cy", d.y);
+        });
     };
+
+    const staticVisualiser = (canvas, groupName) => ({
+        plot: (data) => {
+            let selection = addCircles (canvas, createVisualRepresentation(...data), groupName);
+            let steps = [plotData];
+            steps.forEach(item => item(selection));
+        }
+    });
+
+    const draggableVisualiser = (canvas, groupName) => ({
+        plot: (data) => {
+            let selection = addCircles (canvas, createVisualRepresentation(...data), groupName);
+            let steps = [plotData, addDragger];
+            steps.forEach(item => item(selection));
+        }
+    });
+
+    var projectVisualisation = staticVisualiser(svg, 'project');
+    projectVisualisation.plot(myProjects.getData());
+
+    var peopleVisualisation = draggableVisualiser(svg, 'person');
+    peopleVisualisation.plot(myPeople.getData());
 
 })(window.d3, window._);
