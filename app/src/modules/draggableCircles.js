@@ -222,21 +222,22 @@
         });
     };
 
-    const staticVisualiser = (canvas, groupName) => ({
+    const plotter = (steps, canvas, groupName) => ({
         plot: (data) => {
             let selection = addCircles (canvas, createVisualRepresentation(...data), groupName);
-            let steps = [plotData];
             steps.forEach(item => item(selection));
         }
     });
 
-    const draggableVisualiser = (canvas, groupName) => ({
-        plot: (data) => {
-            let selection = addCircles (canvas, createVisualRepresentation(...data), groupName);
-            let steps = [plotData, addDragger];
-            steps.forEach(item => item(selection));
-        }
-    });
+    const staticVisualiser = (canvas, groupName) => {
+        var features = [plotData];
+        return plotter(features, canvas, groupName);
+    };
+
+    const draggableVisualiser = (canvas, groupName) => {
+        var features = [plotData, addDragger];
+        return plotter(features, canvas, groupName);
+    };
 
     var projectVisualisation = staticVisualiser(svg, 'project');
     projectVisualisation.plot(myProjects.getData());

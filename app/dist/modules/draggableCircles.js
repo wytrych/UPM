@@ -217,11 +217,10 @@ function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
         });
     };
 
-    var staticVisualiser = function staticVisualiser(canvas, groupName) {
+    var plotter = function plotter(steps, canvas, groupName) {
         return {
             plot: function plot(data) {
                 var selection = addCircles(canvas, createVisualRepresentation.apply(undefined, _toConsumableArray(data)), groupName);
-                var steps = [plotData];
                 steps.forEach(function (item) {
                     return item(selection);
                 });
@@ -229,16 +228,14 @@ function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
         };
     };
 
+    var staticVisualiser = function staticVisualiser(canvas, groupName) {
+        var features = [plotData];
+        return plotter(features, canvas, groupName);
+    };
+
     var draggableVisualiser = function draggableVisualiser(canvas, groupName) {
-        return {
-            plot: function plot(data) {
-                var selection = addCircles(canvas, createVisualRepresentation.apply(undefined, _toConsumableArray(data)), groupName);
-                var steps = [plotData, addDragger];
-                steps.forEach(function (item) {
-                    return item(selection);
-                });
-            }
-        };
+        var features = [plotData, addDragger];
+        return plotter(features, canvas, groupName);
     };
 
     var projectVisualisation = staticVisualiser(svg, 'project');
