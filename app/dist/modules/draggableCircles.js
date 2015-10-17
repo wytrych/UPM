@@ -192,19 +192,6 @@ function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
         return representation;
     };
 
-    var circleDrawer = function circleDrawer(state) {
-        return {
-            plot: function plot(data) {
-                addCircles(state.canvas, createVisualRepresentation.apply(undefined, _toConsumableArray(data)), state.groupName).each(function (d) {
-                    var element = d3.select(this).attr("r", d.velocity).attr("cx", d.x).attr("cy", d.y);
-
-                    //                    if (d.type === 'person')
-                    //                        element.call(getDragger());
-                });
-            }
-        };
-    };
-
     var addDragger = function addDragger(selection) {
         selection.each(function (d) {
             d3.select(this).call(getDragger());

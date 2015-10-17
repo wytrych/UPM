@@ -192,21 +192,6 @@
         return representation;
     };
 
-    const circleDrawer = (state) => ({
-        plot: (data) => {
-            addCircles (state.canvas, createVisualRepresentation(...data), state.groupName)
-                .each(function(d) {
-                    var element = d3.select(this)
-                        .attr("r", d.velocity)
-                        .attr("cx", d.x)
-                        .attr("cy", d.y);
-
-//                    if (d.type === 'person') 
-//                        element.call(getDragger());
-                });
-        }
-    });
-
     const addDragger = (selection) => {
         selection.each(function (d) {
             d3.select(this).call(getDragger());
@@ -230,12 +215,17 @@
     });
 
     const staticVisualiser = (canvas, groupName) => {
-        var features = [plotData];
+        var features = [
+            plotData
+        ];
         return plotter(features, canvas, groupName);
     };
 
     const draggableVisualiser = (canvas, groupName) => {
-        var features = [plotData, addDragger];
+        var features = [
+            plotData,
+            addDragger
+        ];
         return plotter(features, canvas, groupName);
     };
 
