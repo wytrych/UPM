@@ -2,7 +2,8 @@
 
     'use strict';
 
-    var projects = [
+    var data = {
+        projects: [
             {
                 name: 'Catbreed',
                 velocity: 80,
@@ -11,12 +12,10 @@
             {
                 name: 'Coalesion',
                 velocity: 80,
-                allocatedPoints: 0,
-                type: 'project'
+                allocatedPoints: 0
             }
-    ];
-
-    var people = [
+        ],
+        people: [
             {
                 name: 'Alice',
                 velocity: 20,
@@ -32,7 +31,8 @@
                 velocity: 40,
                 field: 'css'
             }
-        ];
+        ]
+    };
 
     const getter = (state) => ({
         getData: () => JSON.parse(JSON.stringify(state.data))
@@ -48,62 +48,67 @@
         }
     });
 
-    const dataContainer = (sourceData) => {
+    const assigner = (state) => ({
+        assignToProject: (personName, newProject) => {
+            let person = _.find(state.data, (item) => item.name === personName);
+            let previousProject;
+
+            if (person.project) {
+                previousProject = person.project;
+            }
+
+            person.project = newProject.name;
+
+            if (previousProject) {
+                state.projects.allocatePoints(previousProject, -person.velocity);
+            }
+
+            if (newProject) {
+                state.projects.allocatePoints(newProject.name, person.velocity);
+            }
+
+            projectVisualisation.plot(state.projects.getData());
+
+        }
+    });
+
+    const dataContainer = (sourceData, targets) => {
         let data = JSON.parse(JSON.stringify(sourceData));
         let state = {
-            data
+            data,
+            projects: targets
         };
 
         return Object.assign(
             {},
             getter(state),
-            allocator(state)
+            allocator(state),
+            assigner(state)
         );
     };
 
-    const getDragger = function () {
+    const getDragger = function (target, state) {
 
         const dragstop = function (item) {
-            let projects = _.filter(visualRepresentation, (d) => ( d.type === 'project' ));
-            let nodes = Array.of(item, ...projects);
+            let targetNodes = target.getData();
+            let nodes = Array.of(item, ...targetNodes);
             var previousProject;
 
             var q = d3.geom.quadtree(nodes),
                 i = 0,
                 n = nodes.length;
 
-            if (item.project) {
-                previousProject = _.find(projects, (project) => ( project.name === item.project ));
-            }
-
-            item.project = null;
+            let collidedWith = {};
 
             while (++i < n) {
-                q.visit(collide(nodes[i], item));
+                q.visit(collide(nodes[i], collidedWith));
             }
 
-            svg.selectAll("circle")
-                .attr("cx", d3.f('x'))
-                .attr("cy", d3.f('y'));
+            state.assignToProject(item.name, collidedWith);
 
-            let project = _.find(projects, (project) => ( project.name === item.project ));
-
-            if (previousProject) {
-                previousProject.allocatedPoints -= item.velocity;
-                myProjects.allocatePoints(previousProject.name, -item.velocity);
-            }
-
-            if (project) {
-                project.allocatedPoints += item.velocity;
-                myProjects.allocatePoints(project.name, item.velocity);
-            }
-
-            svg.selectAll('circle.project')
-                .attr('r', (d) => (d.velocity - d.allocatedPoints));
-        
         };
 
-        const collide = function (node, item) {
+        const collide = function (node, collidedWith) {
             var r = node.velocity + 16,
                 nx1 = node.x - r,
                 nx2 = node.x + r,
@@ -114,9 +119,9 @@
                     var x = node.x - quad.point.x,
                         y = node.y - quad.point.y,
                         l = Math.sqrt(x * x + y * y),
-                        r = node.velocity + quad.point.velocity;
+                        r = node.r + quad.point.r;
                     if (l < r) {
-                        item.project = node.name;
+                        collidedWith.name = node.name;
                         l = (l - r) / l * 0.5;
                         quad.point.x += x;
                         quad.point.y += y;
@@ -142,36 +147,33 @@
             .on("dragend", dragstop);
     };
 
-    const width = 540,
-        height = 425;
-
-    const createContainer = (width, height) => 
+    const createContainer = (width = 540, height = 425) => 
         d3.select("body").append("svg").attr("width", width).attr("height", height);
 
-    const addCircles = (container, data, groupName) =>
-        container.selectAll('circle.' + groupName).data(data)
+    const addCircles = (container, data, groupName) => {
+        let selection = container.selectAll('circle.' + groupName).data(data);
+        
+        selection
             .enter()
-                .append('circle')
-                .attr('id', d => d.name)
-                .attr('class', groupName);
+                .append('circle');
 
-    const createVisualRepresentation = (data) => {
-        data.forEach(item => {
-            item.x = Math.round(Math.random() * 300);
-            item.y = Math.round(Math.random() * 300);
-        });
+        selection
+            .attr('id', d => d.name)
+            .attr('class', groupName);
 
-        return data;
+        return selection;
     };
 
-    const plotData = (selection) => {
-        selection.each(function (d) {
-            d3.select(this)
-                .attr("r", d.velocity)
-                .attr("cx", d.x)
-                .attr("cy", d.y);
-        });
-    };
+    const positionCircles = (radiusFunction) => 
+        (selection) => {
+            selection.each(function (d) {
+                d.r = radiusFunction(d);
+                d3.select(this)
+                    .attr("r", d.r)
+                    .attr("cx", d.x)
+                    .attr("cy", d.y);
+            });
+        };
 
     const addDragger = (dragger) =>
         (selection) => {
@@ -190,38 +192,78 @@
             });
         };
 
-    const plotter = (steps, canvas, groupName) => ({
-        plot: (data) => {
-            let selection = addCircles (canvas, createVisualRepresentation(data), groupName);
-            steps.forEach(item => item(selection));
-        }
-    });
+    const plotter = (state, canvas, groupName) => {
+        const visualRepresentation = (data, visualData) => {
+            data = JSON.parse(JSON.stringify(data));
+            data.forEach( (item, key) => {
+
+                if (!visualData[key] || typeof visualData[key].x === 'undefined') 
+                    item.x = Math.round(Math.random() * 300);
+                else
+                    item.x = visualData[key].x;
+
+                if (!visualData[key] || typeof visualData[key].y === 'undefined') 
+                    item.y = Math.round(Math.random() * 300);
+                else
+                    item.y = visualData[key].y;
+            });
+
+            return data;
+        };
+
+        return {
+            plot: (data) => {
+                state.data = visualRepresentation(data, state.data);
+                let selection = addCircles (canvas, state.data, groupName);
+                state.steps.forEach(item => item(selection));
+            }
+        };
+    };
 
     const projectVisualiser = (canvas, groupName) => {
-        var features = [
-            plotData
-        ];
-        return plotter(features, canvas, groupName);
+        let radiusFunction = (d) => d.velocity - d.allocatedPoints;
+
+        let state = {
+            steps: [
+                positionCircles(radiusFunction)
+            ],
+            data: []
+        };
+
+        return Object.assign(
+            {},
+            getter(state),
+            plotter(state, canvas, groupName)
+        );
     };
 
     const peopleVisualiser = (canvas, groupName, dragger) => {
-        var features = [
-            plotData,
-            addClassFromProperty('field'),
-            addDragger(dragger)
-        ];
-        return plotter(features, canvas, groupName);
+        let radiusFunction = (d) => d.velocity;
+
+        let state = {
+            steps: [
+                positionCircles(radiusFunction),
+                addClassFromProperty('field'),
+                addDragger(dragger)
+            ],
+            data: []
+        };
+
+        return Object.assign(
+            {},
+            plotter(state, canvas, groupName)
+        );
     };
 
-    var myProjects = dataContainer(projects);
-    var myPeople = dataContainer(people);
+    var myProjects = dataContainer(data.projects);
+    var myPeople = dataContainer(data.people, myProjects);
 
-    var svg = createContainer(width, height);
+    var svg = createContainer();
 
     var projectVisualisation = projectVisualiser(svg, 'project');
     projectVisualisation.plot(myProjects.getData());
 
-    var peopleVisualisation = peopleVisualiser(svg, 'person', getDragger());
+    var peopleVisualisation = peopleVisualiser(svg, 'person', getDragger(projectVisualisation, myPeople));
     peopleVisualisation.plot(myPeople.getData());
 
 })(window.d3, window._);
