@@ -6,8 +6,7 @@
             {
                 name: 'Catbreed',
                 velocity: 80,
-                allocatedPoints: 0,
-                type: 'project'
+                allocatedPoints: 0
             },
             {
                 name: 'Coalesion',
@@ -21,20 +20,17 @@
             {
                 name: 'Alice',
                 velocity: 20,
-                field: 'backend',
-                type: 'person'
+                field: 'backend'
             },
             {
                 name: 'Bob',
                 velocity: 30,
-                field: 'javascript',
-                type: 'person'
+                field: 'javascript'
             },
             {
                 name: 'Claire',
                 velocity: 40,
-                field: 'css',
-                type: 'person'
+                field: 'css'
             }
         ];
 
@@ -44,9 +40,7 @@
 
     const allocator = (state) => ({
         allocatePoints: (name, points) => {
-            let target = _.find(state.data, (item) => (
-                item.name === name
-            ));
+            let target = _.find(state.data, (item) => item.name === name);
 
             if (target) {
                 target.allocatedPoints += points;
@@ -66,9 +60,6 @@
             allocator(state)
         );
     };
-
-    var myProjects = dataContainer(projects);
-    var myPeople = dataContainer(people);
 
     const getDragger = function () {
 
@@ -154,48 +145,23 @@
     const width = 540,
         height = 425;
 
-    const createContainer = (width, height) => (
-        d3.select("body").append("svg").attr("width", width).attr("height", height)
-    );
+    const createContainer = (width, height) => 
+        d3.select("body").append("svg").attr("width", width).attr("height", height);
 
-    var svg = createContainer(width, height);
-
-    const addCircles = function (container, data, groupName) {
-        return container.selectAll('circle.' + groupName).data(data)
+    const addCircles = (container, data, groupName) =>
+        container.selectAll('circle.' + groupName).data(data)
             .enter()
                 .append('circle')
-                .attr('class', (d) => {
-                    let classNames = `${d.type} ${groupName}`;
-                    if (d.field) 
-                        classNames += ` ${d.field}`;
+                .attr('id', d => d.name)
+                .attr('class', groupName);
 
-                    return classNames;
-                });
-    };
-
-    const createVisualRepresentation = function (...data) {
-        console.log(data);
-        let representation = [];
-        data.forEach((item, key) => {
-            let newItem = {};
-            newItem.x = Math.round(Math.random() * 300);
-            newItem.y = Math.round(Math.random() * 300);
-            newItem.field = item.field;
-            newItem.name = item.name;
-            newItem.velocity = item.velocity;
-            newItem.type = item.type;
-            newItem.allocatedPoints = item.allocatedPoints;
-
-            representation.push(newItem);
+    const createVisualRepresentation = (data) => {
+        data.forEach(item => {
+            item.x = Math.round(Math.random() * 300);
+            item.y = Math.round(Math.random() * 300);
         });
 
-        return representation;
-    };
-
-    const addDragger = (selection) => {
-        selection.each(function (d) {
-            d3.select(this).call(getDragger());
-        });
+        return data;
     };
 
     const plotData = (selection) => {
@@ -207,32 +173,55 @@
         });
     };
 
+    const addDragger = (dragger) =>
+        (selection) => {
+            selection.each(function (d) {
+                d3.select(this).call(dragger);
+            });
+        };
+
+    const addClassFromProperty = (property) => 
+        (selection) => {
+            selection.each(function (d) {
+                let element = d3.select(this);
+                let currentClass = element.attr('class');
+
+                element.attr('class', currentClass + ` ${d[property]}`);
+            });
+        };
+
     const plotter = (steps, canvas, groupName) => ({
         plot: (data) => {
-            let selection = addCircles (canvas, createVisualRepresentation(...data), groupName);
+            let selection = addCircles (canvas, createVisualRepresentation(data), groupName);
             steps.forEach(item => item(selection));
         }
     });
 
-    const staticVisualiser = (canvas, groupName) => {
+    const projectVisualiser = (canvas, groupName) => {
         var features = [
             plotData
         ];
         return plotter(features, canvas, groupName);
     };
 
-    const draggableVisualiser = (canvas, groupName) => {
+    const peopleVisualiser = (canvas, groupName, dragger) => {
         var features = [
             plotData,
-            addDragger
+            addClassFromProperty('field'),
+            addDragger(dragger)
         ];
         return plotter(features, canvas, groupName);
     };
 
-    var projectVisualisation = staticVisualiser(svg, 'project');
+    var myProjects = dataContainer(projects);
+    var myPeople = dataContainer(people);
+
+    var svg = createContainer(width, height);
+
+    var projectVisualisation = projectVisualiser(svg, 'project');
     projectVisualisation.plot(myProjects.getData());
 
-    var peopleVisualisation = draggableVisualiser(svg, 'person');
+    var peopleVisualisation = peopleVisualiser(svg, 'person', getDragger());
     peopleVisualisation.plot(myPeople.getData());
 
 })(window.d3, window._);
