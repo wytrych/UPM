@@ -31,10 +31,41 @@ function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
         }]
     };
 
+    var adder = function adder(state) {
+        return {
+            add: function add(data, type) {
+                try {
+                    if (typeof state.dataObjects[type] !== 'undefined') throw new Error('Object of this type already exists.');
+
+                    state.dataObjects[type] = dataContainer(data);
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+        };
+    };
+
+    var dataManager = function dataManager() {
+        var state = {
+            dataObjects: {}
+        };
+
+        return Object.assign({}, adder(state), objectGetter(state, 'dataObjects'));
+    };
+
+    var objectGetter = function objectGetter(state, property) {
+        return {
+            getReferenceTo: function getReferenceTo(type) {
+                return state[property][type];
+            }
+        };
+    };
+
     var getter = function getter(state) {
+        var property = arguments.length <= 1 || arguments[1] === undefined ? 'data' : arguments[1];
         return {
             getData: function getData() {
-                return JSON.parse(JSON.stringify(state.data));
+                return JSON.parse(JSON.stringify(state[property]));
             }
         };
     };
@@ -75,7 +106,7 @@ function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
                     state.projects.allocatePoints(newProject.name, person.velocity);
                 }
 
-                projectVisualisation.plot(state.projects.getData());
+                projectVisualisation.plot();
             }
         };
     };
@@ -194,7 +225,6 @@ function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
 
     var plotter = function plotter(state, canvas, groupName) {
         var visualRepresentation = function visualRepresentation(data, visualData) {
-            data = JSON.parse(JSON.stringify(data));
             data.forEach(function (item, key) {
 
                 if (!visualData[key] || typeof visualData[key].x === 'undefined') item.x = Math.round(Math.random() * 300);else item.x = visualData[key].x;
@@ -206,8 +236,8 @@ function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
         };
 
         return {
-            plot: function plot(data) {
-                state.data = visualRepresentation(data, state.data);
+            plot: function plot() {
+                state.data = visualRepresentation(state.sourceDataObject.getData(), state.data);
                 var selection = addCircles(canvas, state.data, groupName);
                 state.steps.forEach(function (item) {
                     return item(selection);
@@ -216,40 +246,48 @@ function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
         };
     };
 
-    var projectVisualiser = function projectVisualiser(canvas, groupName) {
+    var projectVisualiser = function projectVisualiser(canvas, groupName, dataBank) {
         var radiusFunction = function radiusFunction(d) {
             return d.velocity - d.allocatedPoints;
         };
 
         var state = {
             steps: [positionCircles(radiusFunction)],
-            data: []
+            data: [],
+            sourceDataObject: dataBank.getReferenceTo(groupName),
+            dataBank: dataBank
         };
 
         return Object.assign({}, getter(state), plotter(state, canvas, groupName));
     };
 
-    var peopleVisualiser = function peopleVisualiser(canvas, groupName, dragger) {
+    var peopleVisualiser = function peopleVisualiser(canvas, groupName, dragger, dataBank) {
         var radiusFunction = function radiusFunction(d) {
             return d.velocity;
         };
 
         var state = {
             steps: [positionCircles(radiusFunction), addClassFromProperty('field'), addDragger(dragger)],
-            data: []
+            data: [],
+            sourceDataObject: dataBank.getReferenceTo(groupName),
+            dataBank: dataBank
         };
 
         return Object.assign({}, plotter(state, canvas, groupName));
     };
 
-    var myProjects = dataContainer(data.projects);
-    var myPeople = dataContainer(data.people, myProjects);
+    var dataBank = dataManager();
+    dataBank.add(data.projects, 'projects');
+    dataBank.add(data.people, 'people');
+
+    var myProjects = dataBank.getReferenceTo('projects');
+    var myPeople = dataBank.getReferenceTo('people');
 
     var svg = createContainer();
 
-    var projectVisualisation = projectVisualiser(svg, 'project');
-    projectVisualisation.plot(myProjects.getData());
+    var projectVisualisation = projectVisualiser(svg, 'projects', dataBank);
+    projectVisualisation.plot();
 
-    var peopleVisualisation = peopleVisualiser(svg, 'person', getDragger(projectVisualisation, myPeople));
-    peopleVisualisation.plot(myPeople.getData());
+    var peopleVisualisation = peopleVisualiser(svg, 'people', getDragger(projectVisualisation, myPeople), dataBank);
+    peopleVisualisation.plot();
 })(window.d3, window._);
