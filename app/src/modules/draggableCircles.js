@@ -117,13 +117,13 @@
         );
     };
 
-    const getDragger = function (targetGroup, dataBank) {
+    const getDragger = function (targetGroup, dataBank, container) {
 
         const dragstop = function (item) {
-            let targetNodes = target.getData();
-            let nodes = Array.of(item, ...targetNodes);
-            var previousProject;
-
+            let nodes = [item];
+            container.selectAll(`.${targetGroup}`).each(d => {
+                nodes.push(d);
+            });
             var q = d3.geom.quadtree(nodes),
                 i = 0,
                 n = nodes.length;
@@ -134,12 +134,13 @@
                 q.visit(collide(nodes[i], collidedWith));
             }
 
-            state.assignToProject(item.name, collidedWith);
+            console.log(item.name, collidedWith.name);
+            //state.assignToProject(item.name, collidedWith);
 
         };
 
         const collide = function (node, collidedWith) {
-            var r = node.velocity + 16,
+            var r = node.r + 16,
                 nx1 = node.x - r,
                 nx2 = node.x + r,
                 ny1 = node.y - r,
@@ -270,7 +271,7 @@
 
     const peopleVisualiser = (canvas, groupName, dataBank) => {
         let radiusFunction = (d) => d.velocity;
-        let dragger = getDragger('projects', dataBank);
+        let dragger = getDragger('projects', dataBank, canvas);
 
         let state = {
             steps: [

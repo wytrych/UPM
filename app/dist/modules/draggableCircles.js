@@ -1,7 +1,5 @@
 'use strict';
 
-function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) arr2[i] = arr[i]; return arr2; } else { return Array.from(arr); } }
-
 (function (d3, _) {
 
     'use strict';
@@ -121,13 +119,13 @@ function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
         return Object.assign({}, getter(state), allocator(state), assigner(state));
     };
 
-    var getDragger = function getDragger(target, state) {
+    var getDragger = function getDragger(targetGroup, dataBank, container) {
 
         var dragstop = function dragstop(item) {
-            var targetNodes = target.getData();
-            var nodes = Array.of.apply(Array, [item].concat(_toConsumableArray(targetNodes)));
-            var previousProject;
-
+            var nodes = [item];
+            container.selectAll('.' + targetGroup).each(function (d) {
+                nodes.push(d);
+            });
             var q = d3.geom.quadtree(nodes),
                 i = 0,
                 n = nodes.length;
@@ -138,11 +136,12 @@ function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
                 q.visit(collide(nodes[i], collidedWith));
             }
 
-            state.assignToProject(item.name, collidedWith);
+            console.log(item.name, collidedWith.name);
+            //state.assignToProject(item.name, collidedWith);
         };
 
         var collide = function collide(node, collidedWith) {
-            var r = node.velocity + 16,
+            var r = node.r + 16,
                 nx1 = node.x - r,
                 nx2 = node.x + r,
                 ny1 = node.y - r,
@@ -261,10 +260,11 @@ function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
         return Object.assign({}, getter(state), plotter(state, canvas, groupName));
     };
 
-    var peopleVisualiser = function peopleVisualiser(canvas, groupName, dragger, dataBank) {
+    var peopleVisualiser = function peopleVisualiser(canvas, groupName, dataBank) {
         var radiusFunction = function radiusFunction(d) {
             return d.velocity;
         };
+        var dragger = getDragger('projects', dataBank, canvas);
 
         var state = {
             steps: [positionCircles(radiusFunction), addClassFromProperty('field'), addDragger(dragger)],
@@ -288,6 +288,6 @@ function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
     var projectVisualisation = projectVisualiser(svg, 'projects', dataBank);
     projectVisualisation.plot();
 
-    var peopleVisualisation = peopleVisualiser(svg, 'people', getDragger(projectVisualisation, myPeople), dataBank);
+    var peopleVisualisation = peopleVisualiser(svg, 'people', dataBank);
     peopleVisualisation.plot();
 })(window.d3, window._);
