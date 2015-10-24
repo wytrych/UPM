@@ -34,13 +34,13 @@
         ]
     };
 
-    const adder = (state) => ({
+    const adder = (state, dataParser = data => data) => ({
         add: (data, type) => {
             try {
                 if (typeof state.dataObjects[type] !== 'undefined') 
                     throw new Error ('Object of this type already exists.');
 
-                state.dataObjects[type] = dataContainer(data);
+                state.dataObjects[type] = dataParser(data);
 
             } catch (e) {
                 console.error(e);
@@ -55,7 +55,7 @@
 
         return Object.assign(
             {},
-            adder(state),
+            adder(state, dataContainer),
             objectGetter(state, 'dataObjects')
         );
     };
@@ -78,9 +78,8 @@
         }
     });
 
-    const assigner = (state) => ({
-        assignToProject: (personName, newProject) => {
-            let person = _.find(state.data, (item) => item.name === personName);
+    const assigner = () => ({
+        assignToProject: (person, newProject, targetContainer) => {
             let previousProject;
 
             if (person.project) {
@@ -90,14 +89,12 @@
             person.project = newProject.name;
 
             if (previousProject) {
-                state.projects.allocatePoints(previousProject, -person.velocity);
+                targetContainer.allocatePoints(previousProject, -person.velocity);
             }
 
             if (newProject) {
-                state.projects.allocatePoints(newProject.name, person.velocity);
+                targetContainer.allocatePoints(newProject.name, person.velocity);
             }
-
-            projectVisualisation.plot();
 
         }
     });
@@ -112,19 +109,18 @@
         return Object.assign(
             {},
             getter(state),
-            allocator(state),
-            assigner(state)
+            allocator(state)
         );
     };
 
-    const getDragger = function (targetGroup, dataBank, container) {
+    const getDragger = function (targetGroup, state, container) {
 
         const dragstop = function (item) {
             let nodes = [item];
             container.selectAll(`.${targetGroup}`).each(d => {
                 nodes.push(d);
             });
-            var q = d3.geom.quadtree(nodes),
+            let q = d3.geom.quadtree(nodes),
                 i = 0,
                 n = nodes.length;
 
@@ -134,8 +130,7 @@
                 q.visit(collide(nodes[i], collidedWith));
             }
 
-            console.log(item.name, collidedWith.name);
-            //state.assignToProject(item.name, collidedWith);
+            state.collision(item, collidedWith);
 
         };
 
@@ -180,20 +175,6 @@
 
     const createContainer = (width = 540, height = 425) => 
         d3.select("body").append("svg").attr("width", width).attr("height", height);
-
-    const addCircles = (container, data, groupName) => {
-        let selection = container.selectAll('circle.' + groupName).data(data);
-        
-        selection
-            .enter()
-                .append('circle');
-
-        selection
-            .attr('id', d => d.name)
-            .attr('class', groupName);
-
-        return selection;
-    };
 
     const positionCircles = (radiusFunction) => 
         (selection) => {
@@ -241,6 +222,16 @@
             return data;
         };
 
+        const addCircles = (container, data, groupName) => {
+            let selection = container.selectAll(`circle.${groupName}`).data(data);
+            
+            selection
+                .enter()
+                .append(`circle.${groupName}`);
+
+            return selection;
+        };
+
         return {
             plot: () => {
                 state.data = visualRepresentation(state.sourceDataObject.getData(), state.data);
@@ -269,19 +260,23 @@
         );
     };
 
-    const peopleVisualiser = (canvas, groupName, dataBank) => {
+    const peopleVisualiser = (canvas, groupName, dataBank, mainPlotter) => {
         let radiusFunction = (d) => d.velocity;
-        let dragger = getDragger('projects', dataBank, canvas);
+        let state = {};
+        let dragger = getDragger('projects', state, canvas);
 
-        let state = {
-            steps: [
-                positionCircles(radiusFunction),
-                addClassFromProperty('field'),
-                addDragger(dragger)
-            ],
-            data: [],
-            sourceDataObject: dataBank.getReferenceTo(groupName),
-            dataBank
+        state.steps =  [
+            positionCircles(radiusFunction),
+            addClassFromProperty('field'),
+            addDragger(dragger)
+        ];
+        state.data = [];
+        state.sourceDataObject = dataBank.getReferenceTo(groupName);
+        state.projects = dataBank.getReferenceTo('projects');
+
+        state.collision = (item, collidedWith) => {
+            assigner().assignToProject(item, collidedWith, state.projects);
+            mainPlotter.plot('projects');
         };
 
         return Object.assign(
@@ -290,19 +285,42 @@
         );
     };
 
+    const plotContainer = () => {
+        const bulkPlotter = (state) => ({
+            plotAll: () => {
+                _.forEach(state.dataObjects, item => {
+                    item.plot();
+                });
+            },
+            plot: (name) => {
+                state.dataObjects[name].plot();
+            }
+        });
+
+        let state = {
+            dataObjects: {}
+        };
+
+        return Object.assign(
+            {},
+            adder(state),
+            bulkPlotter(state)
+        );
+    };
+
     var dataBank = dataManager();
     dataBank.add(data.projects, 'projects');
     dataBank.add(data.people, 'people');
 
-    var myProjects = dataBank.getReferenceTo('projects');
-    var myPeople = dataBank.getReferenceTo('people');
-
     var svg = createContainer();
 
-    var projectVisualisation = projectVisualiser(svg, 'projects', dataBank);
-    projectVisualisation.plot();
+    var visualisations = plotContainer();
 
-    var peopleVisualisation = peopleVisualiser(svg, 'people', dataBank);
-    peopleVisualisation.plot();
+    var projectVisualisation = projectVisualiser(svg, 'projects', dataBank);
+    var peopleVisualisation = peopleVisualiser(svg, 'people', dataBank, visualisations);
+
+    visualisations.add(projectVisualisation, 'projects');
+    visualisations.add(peopleVisualisation, 'people');
+    visualisations.plotAll();
 
 })(window.d3, window._);
