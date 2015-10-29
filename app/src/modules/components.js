@@ -4,15 +4,13 @@ define(() => {
 
     const adder = (state, dataParser = data => data) => ({
         add: (data, type) => {
-            try {
-                if (typeof state.dataObjects[type] !== 'undefined') 
-                    throw new Error ('Object of this type already exists.');
-
-                state.dataObjects[type] = dataParser(data);
-
-            } catch (e) {
-                console.error(e);
+            if (typeof state.dataObjects[type] !== 'undefined') {
+                let error = 'Object of this type already exists.';
+                console.error(error);
+                throw new Error (error);
             }
+
+            state.dataObjects[type] = dataParser(data);
         }
     });
 
@@ -28,7 +26,11 @@ define(() => {
         allocatePoints: (name, points) => {
             let target = _.find(state.data, (item) => item.name === name);
 
-            if (target) {
+            if (!target) {
+                let message = `Target "${name}" doesn't exist.`;
+                console.error(message);
+                throw new Error(message);
+            } else {
                 target.allocatedPoints += points;
             }
         }
@@ -40,15 +42,15 @@ define(() => {
 
             if (person.project) {
                 previousProject = person.project;
+                person.project = '';
             }
-
-            person.project = newProject.name;
 
             if (previousProject) {
                 targetContainer.allocatePoints(previousProject, -person.velocity);
             }
 
             if (newProject) {
+                person.project = newProject.name;
                 targetContainer.allocatePoints(newProject.name, person.velocity);
             }
 
@@ -101,4 +103,4 @@ define(() => {
         assigner,
         plotter
     };
-});
+}, 'components');

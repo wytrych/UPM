@@ -36,4 +36,4 @@ define(() => {
         addClassFromProperty
     };
 
-});
+}, 'plottingSteps');

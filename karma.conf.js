@@ -4,10 +4,10 @@ module.exports = function(config){
     basePath : './',
 
     files : [
-      'app/lib/angular/angular.js',
-      'app/lib/angular-route/angular-route.js',
-      'app/lib/angular-mocks/angular-mocks.js',
-	'app/dist/modules/**/*-spec.js'
+      'app/dist/modules/helpers/definitions.js',
+        'app/lib/d3/d3.js',
+        'app/lib/lodash/lodash.js',
+      'app/dist/modules/**/*.js'
     ],
 
     autoWatch : true,

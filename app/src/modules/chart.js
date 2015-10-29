@@ -1,3 +1,4 @@
+/*
 (function (d3) {
 	'use strict';
 
@@ -87,3 +88,4 @@
 	force.start();
 
 })(window.d3);
+*/

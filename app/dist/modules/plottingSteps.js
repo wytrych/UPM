@@ -37,4 +37,4 @@ define(function () {
         addDragger: addDragger,
         addClassFromProperty: addClassFromProperty
     };
-});
+}, 'plottingSteps');

@@ -10,13 +10,13 @@ define(function () {
         } : arguments[1];
         return {
             add: function add(data, type) {
-                try {
-                    if (typeof state.dataObjects[type] !== 'undefined') throw new Error('Object of this type already exists.');
-
-                    state.dataObjects[type] = dataParser(data);
-                } catch (e) {
-                    console.error(e);
+                if (typeof state.dataObjects[type] !== 'undefined') {
+                    var error = 'Object of this type already exists.';
+                    console.error(error);
+                    throw new Error(error);
                 }
+
+                state.dataObjects[type] = dataParser(data);
             }
         };
     };
@@ -45,7 +45,11 @@ define(function () {
                     return item.name === name;
                 });
 
-                if (target) {
+                if (!target) {
+                    var message = 'Target "' + name + '" doesn\'t exist.';
+                    console.error(message);
+                    throw new Error(message);
+                } else {
                     target.allocatedPoints += points;
                 }
             }
@@ -59,15 +63,15 @@ define(function () {
 
                 if (person.project) {
                     previousProject = person.project;
+                    person.project = '';
                 }
-
-                person.project = newProject.name;
 
                 if (previousProject) {
                     targetContainer.allocatePoints(previousProject, -person.velocity);
                 }
 
                 if (newProject) {
+                    person.project = newProject.name;
                     targetContainer.allocatePoints(newProject.name, person.velocity);
                 }
             }
@@ -113,4 +117,4 @@ define(function () {
         assigner: assigner,
         plotter: plotter
     };
-});
+}, 'components');

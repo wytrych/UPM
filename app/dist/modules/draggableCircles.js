@@ -83,4 +83,4 @@ define(function (require) {
     visualisations.add(projectVisualisation, 'projects');
     visualisations.add(peopleVisualisation, 'people');
     visualisations.plotAll();
-});
+}, 'circles');

@@ -58,4 +58,4 @@ define(require => {
         dataManager,
         plotContainer
     };
-});
+}, 'structures');

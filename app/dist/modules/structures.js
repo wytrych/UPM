@@ -50,4 +50,4 @@ define(function (require) {
         dataManager: dataManager,
         plotContainer: plotContainer
     };
-});
+}, 'structures');
