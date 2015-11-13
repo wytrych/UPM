@@ -6,6 +6,7 @@ define(function () {
 
     var positionCircles = function positionCircles(radiusFunction) {
         return function (selection) {
+            //console.log(selection);
             selection.each(function (d) {
                 d.r = radiusFunction(d);
                 d3.select(this).attr("r", d.r).attr("cx", d.x).attr("cy", d.y);
@@ -25,9 +26,9 @@ define(function () {
         return function (selection) {
             selection.each(function (d) {
                 var element = d3.select(this);
-                var currentClass = element.attr('class');
+                var currentClass = element.attr('class') || '';
 
-                element.attr('class', currentClass + (" " + d[property]));
+                element.attr('class', currentClass + " " + d[property]);
             });
         };
     };

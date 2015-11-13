@@ -4,6 +4,7 @@ define(() => {
 
     const positionCircles = (radiusFunction) => 
         (selection) => {
+            //console.log(selection);
             selection.each(function (d) {
                 d.r = radiusFunction(d);
                 d3.select(this)
@@ -24,9 +25,9 @@ define(() => {
         (selection) => {
             selection.each(function (d) {
                 let element = d3.select(this);
-                let currentClass = element.attr('class');
+                let currentClass = element.attr('class') || '';
 
-                element.attr('class', currentClass + ` ${d[property]}`);
+                element.attr('class', `${currentClass} ${d[property]}`);
             });
         };
 

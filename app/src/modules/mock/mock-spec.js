@@ -163,5 +163,75 @@ describe('Components module: ', () => {
         });
     });
 
+    describe('plotter', () => {
+        beforeEach(function () {
+            this.canvas = d3.select('body').append('svg');
+            this.groupName = 'group';
+            this.state = {
+                sourceDataObject: {
+                    getData: () => [{ name: 'item' }]
+                },
+                data: [
+                    {
+                        name: 'item'
+                    }
+                ],
+                steps: [ 
+                    x => x
+                ]
+            };
+            this.plotter = module.plotter(this.state, this.canvas, this.groupName);
+        });
+
+        it('should create coordinates for data points that dont have them', function () {
+
+            expect(this.state.data[0].x).toBeUndefined();
+            expect(this.state.data[0].y).toBeUndefined();
+
+            this.plotter.plot();
+
+            expect(this.state.data[0].x).toEqual(jasmine.any(Number));
+            expect(this.state.data[0].y).toEqual(jasmine.any(Number));
+            
+        });
+
+        it('shouldnt change the coordinates for data point that already have them', function () {
+
+            this.state.data[0].x = 100;
+            this.state.data[0].y = 200;
+
+            this.plotter.plot();
+            
+            expect(this.state.data[0].x).toBe(100);
+            expect(this.state.data[0].y).toBe(200);
+        });
+
+        it('should create svg circles for each data point', function () {
+
+            expect(this.canvas.selectAll('circle.group')[0].length).toBe(0);
+
+            this.plotter.plot();
+
+            expect(this.canvas.selectAll('circle.group')[0].length).toBe(1);
+            
+        });
+
+        it('should call all provided steps', function () {
+            this.state.steps = [
+                jasmine.createSpy('step1'),
+                jasmine.createSpy('step2'),
+            ];
+
+            this.plotter.plot();
+
+            let selection = this.canvas.selectAll('circle.group');
+
+            expect(this.state.steps[0]).toHaveBeenCalled();
+            expect(this.state.steps[1]).toHaveBeenCalled();
+            
+        });
+        
+    });
+
 });
 
