@@ -4,7 +4,6 @@ define(() => {
 
     const positionCircles = (radiusFunction) => 
         (selection) => {
-            //console.log(selection);
             selection.each(function (d) {
                 d.r = radiusFunction(d);
                 d3.select(this)

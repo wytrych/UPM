@@ -1,4 +1,5 @@
 define(require => {
+    console.log('strc');
 
     'use strict';
 

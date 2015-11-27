@@ -4,10 +4,11 @@ module.exports = function(config){
     basePath : './',
 
     files : [
-      'app/dist/modules/helpers/definitions.js',
+        'app/dist/modules/helpers/definitions.js',
         'app/lib/d3/d3.js',
         'app/lib/lodash/lodash.js',
-      'app/dist/modules/**/*.js'
+        'app/dist/modules/*.js',
+        'app/dist/tests/*.js'
     ],
 
     autoWatch : true,

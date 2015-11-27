@@ -1,91 +1,91 @@
-describe('Components module: ', () => {
+'use strict';
+
+describe('Components module: ', function () {
     'use strict';
     var module;
 
-    beforeEach(() => {
+    beforeEach(function () {
         module = window.modules.components;
     });
 
-    describe('adder', () => {
+    describe('adder', function () {
 
-        it('should allow to add an item to the constructor state object', () => {
-            let state = {
+        it('should allow to add an item to the constructor state object', function () {
+            var state = {
                 dataObjects: {}
             };
 
-            let anAdder = module.adder(state);
+            var anAdder = module.adder(state);
 
             anAdder.add('aString', 'newType');
 
             expect(state.dataObjects.newType).toBe('aString');
-
         });
 
-        it('should accept a data parser argument', () => {
-            let state = {
+        it('should accept a data parser argument', function () {
+            var state = {
                 dataObjects: {}
             };
 
-            let parser = (data) => `${data} parsed`;
+            var parser = function parser(data) {
+                return data + ' parsed';
+            };
 
-            let anAdder = module.adder(state, parser);
+            var anAdder = module.adder(state, parser);
 
             anAdder.add('aString', 'newType');
 
             expect(state.dataObjects.newType).toBe('aString parsed');
-
         });
 
-        it('should throw an error if namespace is already in use', () => {
+        it('should throw an error if namespace is already in use', function () {
 
-            let state = {
+            var state = {
                 dataObjects: {
                     newType: 'aString'
                 }
             };
 
-            let anAdder = module.adder(state);
+            var anAdder = module.adder(state);
 
-            expect(() => {
+            expect(function () {
                 anAdder.add('aString', 'newType');
             }).toThrow();
-
         });
-
     });
 
-    describe('objectGetter', () => {
-        it('should return a reference to an object', () => {
-            let state = {
+    describe('objectGetter', function () {
+        it('should return a reference to an object', function () {
+            var state = {
                 container: {
                     anObject: {}
                 }
             };
 
-            let objectGetter = module.objectGetter(state, 'container');
+            var objectGetter = module.objectGetter(state, 'container');
 
             expect(objectGetter.getReferenceTo('anObject')).toBe(state.container.anObject);
         });
     });
 
-    describe('getter', () => {
-        it('should return a copy of an object', () => {
-            let state = {
+    describe('getter', function () {
+        it('should return a copy of an object', function () {
+            var state = {
                 container: {
                     anObject: {}
                 }
             };
 
-            let getter = module.getter(state, 'container');
+            var getter = module.getter(state, 'container');
 
             expect(getter.getData()).not.toBe(state.container);
             expect(getter.getData()).toEqual(state.container);
         });
     });
 
-    describe('allocator', () => {
-        it('should add points to a target object', () => {
-            let state = {
+    describe('allocator', function () {
+        it('should add points to a target object', function () {
+            var state = {
                 data: {
                     target: {
                         name: 'me',
@@ -94,15 +94,15 @@ describe('Components module: ', () => {
                 }
             };
 
-            let allocator = module.allocator(state);
+            var allocator = module.allocator(state);
 
             allocator.allocatePoints('me', 10);
 
             expect(state.data.target.allocatedPoints).toBe(15 + 10);
         });
 
-        it('should throw if target doesnt exist', () => {
-            let state = {
+        it('should throw if target doesnt exist', function () {
+            var state = {
                 data: {
                     target: {
                         name: 'notMe',
@@ -111,17 +111,15 @@ describe('Components module: ', () => {
                 }
             };
 
-            let allocator = module.allocator(state);
+            var allocator = module.allocator(state);
 
-            expect(() => {
+            expect(function () {
                 allocator.allocatePoints('me', 10);
             }).toThrow();
-
         });
-
     });
 
-    describe('assigner', () => {
+    describe('assigner', function () {
         beforeEach(function () {
             this.person = {
                 velocity: 12
@@ -144,41 +142,40 @@ describe('Components module: ', () => {
             this.assigner = module.assigner();
         });
 
-        it ('should assign a person to a project', function () {
+        it('should assign a person to a project', function () {
 
             this.assigner.assignToProject(this.person, this.newProject, this.targetContainer);
 
             expect(this.state.data.project.allocatedPoints).toBe(30);
             expect(this.person.project).toBe('projectA');
-
         });
 
         it('should deassign from an old project when no new one is given', function () {
             this.person.project = 'projectA';
 
-            this.assigner.assignToProject(this.person, undefined, this.targetContainer);
+            this.assigner.assignToProject(this.person, {}, this.targetContainer);
 
             expect(this.state.data.project.allocatedPoints).toBe(6);
             expect(this.person.project).toBe('');
         });
     });
 
-    describe('plotter', () => {
+    describe('plotter', function () {
         beforeEach(function () {
             this.canvas = d3.select('body').append('svg');
             this.groupName = 'group';
             this.state = {
                 sourceDataObject: {
-                    getData: () => [{ name: 'item' }]
-                },
-                data: [
-                    {
-                        name: 'item'
+                    getData: function getData() {
+                        return [{ name: 'item' }];
                     }
-                ],
-                steps: [ 
-                    x => x
-                ]
+                },
+                data: [{
+                    name: 'item'
+                }],
+                steps: [function (x) {
+                    return x;
+                }]
             };
             this.plotter = module.plotter(this.state, this.canvas, this.groupName);
         });
@@ -192,7 +189,6 @@ describe('Components module: ', () => {
 
             expect(this.state.data[0].x).toEqual(jasmine.any(Number));
             expect(this.state.data[0].y).toEqual(jasmine.any(Number));
-            
         });
 
         it('shouldnt change the coordinates for data point that already have them', function () {
@@ -201,7 +197,7 @@ describe('Components module: ', () => {
             this.state.data[0].y = 200;
 
             this.plotter.plot();
-            
+
             expect(this.state.data[0].x).toBe(100);
             expect(this.state.data[0].y).toBe(200);
         });
@@ -213,25 +209,17 @@ describe('Components module: ', () => {
             this.plotter.plot();
 
             expect(this.canvas.selectAll('circle.group')[0].length).toBe(1);
-            
         });
 
         it('should call all provided steps', function () {
-            this.state.steps = [
-                jasmine.createSpy('step1'),
-                jasmine.createSpy('step2'),
-            ];
+            this.state.steps = [jasmine.createSpy('step1'), jasmine.createSpy('step2')];
 
             this.plotter.plot();
 
-            let selection = this.canvas.selectAll('circle.group');
+            var selection = this.canvas.selectAll('circle.group');
 
             expect(this.state.steps[0]).toHaveBeenCalled();
             expect(this.state.steps[1]).toHaveBeenCalled();
-            
         });
-        
     });
-
 });
-

@@ -6,7 +6,6 @@ define(function () {
 
     var positionCircles = function positionCircles(radiusFunction) {
         return function (selection) {
-            //console.log(selection);
             selection.each(function (d) {
                 d.r = radiusFunction(d);
                 d3.select(this).attr("r", d.r).attr("cx", d.x).attr("cy", d.y);

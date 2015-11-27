@@ -12,7 +12,6 @@ define(function () {
             add: function add(data, type) {
                 if (typeof state.dataObjects[type] !== 'undefined') {
                     var error = 'Object of this type already exists.';
-                    console.error(error);
                     throw new Error(error);
                 }
 
@@ -47,7 +46,6 @@ define(function () {
 
                 if (!target) {
                     var message = 'Target "' + name + '" doesn\'t exist.';
-                    console.error(message);
                     throw new Error(message);
                 } else {
                     target.allocatedPoints += points;
@@ -70,7 +68,7 @@ define(function () {
                     targetContainer.allocatePoints(previousProject, -person.velocity);
                 }
 
-                if (newProject) {
+                if (newProject && newProject.name) {
                     person.project = newProject.name;
                     targetContainer.allocatePoints(newProject.name, person.velocity);
                 }
