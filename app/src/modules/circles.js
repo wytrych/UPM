@@ -1,6 +1,8 @@
-define(function (require) {
+define((require) => {
 
     'use strict';
+
+    console.log('circles');
 
     var components = require('components');
     var structures = require('structures');
@@ -98,4 +100,4 @@ define(function (require) {
     visualisations.add(projectVisualisation, 'projects');
     visualisations.add(peopleVisualisation, 'people');
     visualisations.plotAll();
-}, 'circles');
+});

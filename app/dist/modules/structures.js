@@ -1,7 +1,6 @@
 'use strict';
 
 define(function (require) {
-    console.log('strc');
 
     'use strict';
 

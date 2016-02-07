@@ -11,6 +11,7 @@
     "gulp-karma": "0.0.4",
     "http-server": "^0.6.1",
     "jasmine-core": "^2.3.4",
+    "jspm": "^0.16.15",
     "karma": "0.13.9",
     "karma-chrome-launcher": "^0.1.12",
     "karma-firefox-launcher": "^0.1.6",
@@ -31,5 +32,15 @@
     "update-webdriver": "webdriver-manager update",
     "preprotractor": "npm run update-webdriver",
     "protractor": "protractor e2e-tests/protractor.conf.js"
+  },
+  "jspm": {
+    "directories": {
+      "baseURL": "app"
+    },
+    "devDependencies": {
+      "babel": "npm:babel-core@^5.8.24",
+      "babel-runtime": "npm:babel-runtime@^5.8.24",
+      "core-js": "npm:core-js@^1.1.4"
+    }
   }
 }
