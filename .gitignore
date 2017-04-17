@@ -5,3 +5,4 @@ lib/
 tmp
 .DS_Store
 .idea
+*.swp
